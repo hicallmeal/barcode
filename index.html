@@ -1,22 +1,49 @@
 <!DOCTYPE html>
 <html>
     <body>
-        <h1>Title</h1>
+        <h1>Barcode Tester</h1>
         <p></p>
         <span></span>
+        <div></div>
         <script>
+            function fileHandler(evt) {
+                let file = evt.target.files[0]
+             
+                // create new detector
+                const barcodeDetector = new BarcodeDetector({
+                    formats: ["code_39", "codabar", "ean_13"],
+                });
+
+                let co = []
+                
+                barcodeDetector
+                  .detect(imageEl)
+                  .then((barcodes) => {
+                    barcodes.forEach((barcode) => co.append(barcode.rawValue));
+                  })
+                  .catch((err) => {
+                    co.append(err);
+                  });
+
+                document.querySelector("h1").innertext= co;
+
+            }
             (async function() {
                 let status;
                 if (!("BarcodeDetector" in globalThis)) {
                     status = "Barcode Detector is not supported by this browser.";
+                    // code for determining if user-agent supports it in case (flags, etc)
                 } else {
                     status = "Barcode Detector supported!";
-                    // create new detector
-                    const barcodeDetector = new BarcodeDetector({
-                        formats: ["code_39", "codabar", "ean_13"],
-                    });
                     formats = await BarcodeDetector.getSupportedFormats()
                     document.querySelector("span").innerText = formats;
+                    
+                    let filePicker = document.createElement("input")
+                    filepicker.type = "file"
+                    filePicker.accept = "image/*"
+                    
+                    document.querySelector("div").appendChild(filepicker)
+                    filepicker.addEventListener("change", filehandler)
                 }
                 document.querySelector("p").innerText = status;
             })();
