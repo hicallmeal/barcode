@@ -3,47 +3,68 @@
     <body>
         <h1>Barcode Tester</h1>
         <p></p>
-        <span></span>
         <div></div>
+        <div id="log"></div>
         <script>
-            function fileHandler(evt) {
-                let file = evt.target.files[0]
+            var baseLogFunction = console.log;
+            console.log = function(){
+                baseLogFunction.apply(console, arguments);
+
+                var args = Array.prototype.slice.call(arguments);
+                for(var i=0;i<args.length;i++){
+                    var node = createLogNode(args[i]);
+                    document.querySelector("#log").appendChild(node);
+                }
+            }
+
+            function createLogNode(message){
+                var node = document.createElement("div");
+                var textNode = document.createTextNode(message);
+                node.appendChild(textNode);
+                return node;
+            }
+
+            window.onerror = function(message, url, linenumber) {
+                console.log("JavaScript error: " + message + " on line " +
+                    linenumber + " for " + url);
+            }
+            async function fileHandler(evt) {
+                let file = await createImageBitmap(evt.target.files[0])
              
-                // create new detector
                 const barcodeDetector = new BarcodeDetector({
-                    formats: ["code_39", "codabar", "ean_13"],
+                    formats: ["code_128"]
                 });
 
-                let co = []
-                
-                barcodeDetector
-                  .detect(imageEl)
-                  .then((barcodes) => {
-                    barcodes.forEach((barcode) => co.append(barcode.rawValue));
-                  })
-                  .catch((err) => {
-                    co.append(err);
-                  });
+                let barcodes;
 
-                document.querySelector("h1").innertext= co;
+                try {
+                    barcodes = await barcodeDetector.detect(file);
+                }
+                catch (err) {
+                    return console.log(err)
+                }
+
+                let simNum = barcodes[0].rawValue.slice(-13)
+                fetch('/submit', {
+                    method: "POST",
+                    body: simNum
+                })
 
             }
             (async function() {
                 let status;
-                if (!("BarcodeDetector" in globalThis)) {
+                if (window.BarcodeDetector == undefined) {
                     status = "Barcode Detector is not supported by this browser.";
                     // code for determining if user-agent supports it in case (flags, etc)
                 } else {
                     status = "Barcode Detector supported!";
-                    formats = await BarcodeDetector.getSupportedFormats()
-                    document.querySelector("span").innerText = formats;
-                    
+
                     let filePicker = document.createElement("input")
                     filePicker.type = "file"
                     filePicker.accept = "image/*"
                     
-                    document.querySelector("div").appendChild(filepicker)
-                    filePicker.addEventListener("change", filehandler)
+                    document.querySelector("div").appendChild(filePicker)
+                    filePicker.addEventListener("change", fileHandler)
                 }
                 document.querySelector("p").innerText = status;
             })();

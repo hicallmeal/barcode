@@ -1,0 +1,1 @@
+openssl req -new -x509 -keyout localhost-key.pem -out localhost.pem -days 365 -noenc -subj '//CN=localhost'
